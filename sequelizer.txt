@@ -1,0 +1,22 @@
+npx sequelize init    -> initialized a sequelize , create folders etc etc, run the command on the project folder (eg - src/)
+
+npx sequelize db:create -> Creates the database mentioned in config.json() 
+
+npx sequelize model:generate --name <name of model> --attributes <field1>:<datatype>,<field2>:<datatype>
+
+Points to be noted:
+1) There are two layers: Database label and javascipt label, the model is actually the javascipt label
+Any changes to it will reflect the user input but the tables will not changes
+
+2)The final change to table is in the hand of migration , finalize the model structure in migration 
+and then we need to commit the change
+Its basically version controlling of sql tables , you finalize a model and then you commit , if you do any other changes do in migration and then again commit
+You can also go back / revert your changes
+
+npx sequelize db:migrate --> runs the pending migration (basically commit)
+
+npx sequelize db:migrate:undo -->  revert back your changes
+
+npx sequelize db:migrate:undo:all --> revert back all your changes  
+
+**FOR DETAILED DATA TYPES, REFER: https://sequelize.org/docs/v7/models/data-types/

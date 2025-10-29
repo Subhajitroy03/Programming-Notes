@@ -1,0 +1,572 @@
+APP DEVELOPMENT BY KOTLIN
+
+SAMPLE PROG- 
+
+package com.example.app
+
+import ...
+
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var button: Button    //Declares a private Button variable. lateinit means it will be initialized later (in onCreate).
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.new_layout)   //Links the code to the visual layout defined in the new_layout.xml file.
+
+        button = findViewById(R.id.button)  //Finds the actual Button element in the layout using its ID (button) and assigns it to the variable.
+        button.text = getString(R.string.button_text)  //NOW YOU CAN MANIPULATE THE PROP OF BUTTON (WHICH CAN ALSO BE DONE FROM XML FILE)
+		
+    }
+}
+
+TASK: When the myButton is clicked, the myTextView (which is assumed to be initially hidden) is made visible and its text is updated with a string resource.
+
+package com.example.app
+
+import ...
+
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var myButton: Button
+    private lateinit var myTextView: TextView
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        myButton = findViewById(R.id.myButton)
+        myTextView = findViewById(R.id.myTextView)
+
+        myButton.text = getString(R.string.button_text)
+
+        myButton.setOnClickListener {
+            myTextView.visibility = View.VISIBLE
+            myTextView.text = getString(R.string.text_view_text)
+        }
+    }
+}
+
+DESIGN A APP: 
+When the button is clicked, it checks the content of the editText:
+If the editText is NOT empty: It takes the user's input, makes the myTextView visible, and displays the user's input in the myTextView.
+If the editText IS empty: It makes the myTextView visible and displays a generic pre-defined message (retrieved from resources) in the myTextView.
+
+private lateinit var myTextView: TextView
+private lateinit var editText: EditText
+
+override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    setContentView(R.layout.activity_main)
+
+    myButton = findViewById(R.id.myButton)
+    myTextView = findViewById(R.id.myTextView)
+    editText = findViewById(R.id.editText)
+
+    myButton.text = getString(R.string.button_text)
+
+    myButton.setOnClickListener {
+        if (!editText.text.toString().isEmpty()) {
+            val input = editText.text.toString()
+
+            myTextView.visibility = View.VISIBLE
+            myTextView.text = input
+        } else {
+            myTextView.visibility = View.VISIBLE
+            myTextView.text = getString(R.string.text_view_text_message)
+        }
+    }
+}
+
+****NOTE: IF YOU WANT TO INPUT ONLY NUMBERS : CHANGE KEYBOARD 
+IN <EditText do  android:inputType:"number" 
+
+
+TASK: DESIGN A APP WHERE THERE IS A BUTTON WHICH WHEN CLICKED CAN RANDOMLY CHANGE THE COLOUR OF BACKGROUND
+
+XML file:
+activity_main.xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/view"
+    tools:context=".MainActivity">
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/button_change"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:backgroundTint="@color/purple_200"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+
+MainActivity.kt
+
+package com.example.changecolor
+
+import ...
+
+class MainActivity : AppCompatActivity() {
+    private lateinit var view: View
+    private lateinit var button: FloatingActionButton
+    private val colors = arrayOf(Color.RED, Color.WHITE, Color.GRAY, Color.GREEN, Color.MAGENTA, Color.BLACK, Color.YELLOW)
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        view = findViewById(R.id.view)
+        button = findViewById(R.id.button_change)
+
+        button.setOnClickListener { view!
+            view.setBackgroundColor(colors[Random.nextInt(colors.size)])
+        }
+    }
+}
+
+HOW TO USE RADIO BUTTON 
+
+package com.example.radiobutton
+
+import ...
+
+class MainActivity : AppCompatActivity() {
+    private lateinit var radioGroup: RadioGroup
+    private lateinit var radioButton: RadioButton
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        radioGroup = findViewById(R.id.radioGroup)
+
+        radioGroup.setOnCheckedChangeListener { radioGroup, id ->
+            radioButton = findViewById(id)
+            when (radioButton.id) {
+                R.id.yesButton -> {
+                    Toast.makeText(context: this@MainActivity, text: "Yes button clicked", Toast.LENGTH_SHORT).show()
+                } 
+                R.id.noButton -> {
+                    Toast.makeText(context: this@MainActivity, text: "No button clicked", Toast.LENGTH_SHORT).show()
+                } 
+                R.id.maybeButton -> {
+                    Toast.makeText(context: this@MainActivity, text: "Maybe button clicked", Toast.LENGTH_SHORT).show()
+                } 
+            } 
+        } 
+    }
+} 
+
+USE OF SEEKBAR
+
+package com.example.seekbar
+
+import android.os.Bundle
+import android.widget.SeekBar
+import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+
+// Assuming a class structure for an Android Activity
+class MainActivity : AppCompatActivity() {
+
+    // Properties for the UI elements
+    private lateinit var seekBar: SeekBar
+    private lateinit var textViewProgress: TextView // Corrected variable name as seen in the code logic
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        // Initializing the UI elements
+        // Assuming the SeekBar ID is R.id.seekBar based on usage
+        seekBar = findViewById(R.id.seekBar)
+        textViewProgress = findViewById(R.id.textViewProgress)
+
+        // Setting the listener for the SeekBar
+        seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+
+            // Called when the progress level has changed
+            override fun onProgressChanged(p0: SeekBar?, p1: Int, p2: Boolean) {
+                // Show a toast with the event name
+                Toast.makeText(this@MainActivity, "onProgressChanged", Toast.LENGTH_SHORT).show()
+                // Update the TextView with the current progress rate
+                textViewProgress.text = "Rate = " + p0!!.progress.toString() // p0 is the SeekBar instance
+            }
+
+            // Called when the user starts touching the SeekBar
+            override fun onStartTrackingTouch(p0: SeekBar?) {
+                // Show a toast with the event name
+                Toast.makeText(this@MainActivity, "onStartTrackingTouch", Toast.LENGTH_SHORT).show()
+            }
+
+            // Called when the user stops touching the SeekBar
+            override fun onStopTrackingTouch(p0: SeekBar?) {
+                // Show a toast with the event name
+                Toast.makeText(this@MainActivity, "onStopTrackingTouch", Toast.LENGTH_SHORT).show()
+                // Update the TextView with the final progress rate after releasing
+                textViewProgress.text = "Final Rate = " + p0!!.progress.toString() // p0 is the SeekBar instance
+            }
+        })
+    }
+}
+
+
+TOOGLE Button
+Task : To make a text visible and invisible based on a toggle button
+package com.example.togglebutton
+
+import ... // Imports would be listed here
+
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var toggleButton: ToggleButton
+    private lateinit var textViewHide: TextView
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        toggleButton = findViewById(R.id.toggleButton)
+        textViewHide = findViewById(R.id.textView)
+
+        toggleButton.setOnCheckedChangeListener { compoundButton, isChecked ->
+            if (isChecked) {
+                textViewHide.visibility = View.VISIBLE
+            } else {
+                textViewHide.visibility = View.INVISIBLE
+            }
+        }
+    }
+}
+
+CHECKBOX
+
+package com.example.checkbox
+
+import android.os.Bundle
+import android.widget.Button
+import android.widget.CheckBox
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity // Assuming this import
+
+class MainActivity : AppCompatActivity() {
+
+    // 1. Declare UI element properties
+    private lateinit var checkBoxKotlin: CheckBox
+    private lateinit var checkBoxJava: CheckBox
+    private lateinit var checkBoxPython: CheckBox
+    private lateinit var textViewChoose: TextView
+    private lateinit var showButton: Button // From the second image
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        // 2. Initialize UI elements by finding their IDs
+        checkBoxKotlin = findViewById(R.id.checkBoxKotlin)
+        checkBoxJava = findViewById(R.id.checkBoxJava)
+        checkBoxPython = findViewById(R.id.checkBoxPython)
+        textViewChoose = findViewById(R.id.textViewChoose)
+        showButton = findViewById(R.id.showButton)
+
+        // 3. Set up the click listener for the 'showButton'
+        showButton.setOnClickListener {
+            val sb = StringBuilder()
+
+            // Append status for Kotlin CheckBox
+            sb.append(checkBoxKotlin.text.toString() + " status is: " + checkBoxKotlin.isChecked + "\n")
+
+            // Append status for Java CheckBox
+            sb.append(checkBoxJava.text.toString() + " status is: " + checkBoxJava.isChecked + "\n")
+
+            // Append status for Python CheckBox
+            sb.append(checkBoxPython.text.toString() + " status is: " + checkBoxPython.isChecked + "\n")
+
+            // Set the final string to the TextView
+            textViewChoose.text = sb.toString()
+        }
+    }
+}
+
+ACTIVITY LIFE CYCLES 
+
+Here are the main Android Activity Lifecycle callback methods and their meaning in simple English, presented point-wise:
+
+onCreate(): The screen is created. This is when the app sets up the screen layout and initializes variables.
+
+onStart(): The screen is becoming visible. The user can now see the screen, but it's not yet active for input.
+
+onResume(): The screen is fully active and ready to use. This is the main state where the user interacts with the app.
+
+onPause(): The screen is losing focus. Something else (like a pop-up or a phone call) is partially covering it. You should save any important data quickly.
+
+onStop(): The screen is completely hidden. The user has switched to another app or screen, and the system is saving resources.
+
+onRestart(): The hidden screen is waking up. The user is navigating back to this screen after it was stopped.
+
+onDestroy(): The screen is being destroyed. This is the final cleanup before the screen is removed from memory.
+
+eg -
+package com.example.lifecycledemo
+
+import android.os.Bundle
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+
+class MainActivity : AppCompatActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+        Toast.makeText(this@MainActivity, "onCreate called", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        Toast.makeText(this@MainActivity, "onStart called", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Toast.makeText(this@MainActivity, "onResume called", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        Toast.makeText(this@MainActivity, "onPause called", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        Toast.makeText(this@MainActivity, "onStop called", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onRestart() {
+        super.onRestart()
+        Toast.makeText(this@MainActivity, "onRestart called", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Toast.makeText(this@MainActivity, "onDestroy called", Toast.LENGTH_SHORT).show()
+    }
+}
+
+
+You need to override Activity Lifecycle functions for three main reasons:
+
+Resource Management: To save battery and improve performance by starting (e.g., music playback in onStart()) and stopping (e.g., pausing music in onStop()) tasks when the screen becomes visible or hidden.
+
+State Preservation: To ensure the user doesn't lose data by saving unsaved input in onPause() and restoring it in onCreate().
+
+User Experience (UX): To handle interruptions smoothly, making sure the app pauses and resumes correctly when interrupted by something like a phone call.
+
+
+SWITCHING FROM ONE SCREEN TO ANOTHER
+
+FIRST CREATE ANOTHER Empty Activity file and change as per you need 
+Now, on first page upon clicking a button it should go to second page 
+
+Here is the code for it
+
+package com.example.activities
+
+import ...
+
+class MainActivity : AppCompatActivity() {
+    private lateinit var goToButton: Button
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        goToButton = findViewById(R.id.button_go_to_act)
+
+        goToButton.setOnClickListener { view!
+            val intent = Intent(packageContext: this@MainActivity, SecondActivity::class.java)
+            startActivity(intent)
+        }
+    }
+}
+
+
+
+1. val intent = Intent(packageContext: this@MainActivity, SecondActivity::class.java)
+This line creates an Intent, which acts like a request or a message used to communicate between Android components. Think of it as a ticket with a destination written on it.
+
+val intent: Declares a new, immutable variable named intent.
+
+Intent(...): This calls the constructor to create the Intent object.
+
+packageContext: this@MainActivity: This specifies where the request is coming from. this@MainActivity refers to the current screen (the MainActivity).
+
+SecondActivity::class.java: This specifies where the request is going. It tells the Android system to load and start the class named SecondActivity.
+
+2. startActivity(intent)
+This line is the instruction that tells the Android system to carry out the request defined by the intent.
+
+startActivity(...): This is a method inherited from the Activity class.
+
+(intent): The argument passed is the "ticket" you just created, which specifies the destination (SecondActivity).
+
+When this line executes, the Android system reads the intent, finds the SecondActivity, and launches it, bringing it to the foreground and hiding the MainActivity (moving it into the onPause() and onStop() states).
+
+HOW TO PASS DATA FROM ONE ACTIVITY TO ANOTHER
+
+First store the keys in a separate kotlin file:
+
+package com.example.activities
+
+class Constants {
+    companion object {
+        const val INTENT_MESSAGE_KEY = "Message"
+        const val INTENT_MESSAGE2_KEY = "Message2"
+        const val INTENT_DATA_NUMBER = "Number"
+    }
+}
+
+inside MainActivity.kt
+
+package com.example.activities
+
+import ...
+
+class MainActivity : AppCompatActivity() {
+    private lateinit var goToButton: Button
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        goToButton = findViewById(R.id.button_go_to_act)
+
+        goToButton.setOnClickListener { view!
+            val intent = Intent(packageContext: this@MainActivity, SecondActivity::class.java)
+            intent.putExtra(Constants.INTENT_MESSAGE_KEY, value: "Hello from first Activity")
+            intent.putExtra(Constants.INTENT_MESSAGE2_KEY, value: "How was your day?")
+            intent.putExtra(Constants.INTENT_DATA_NUMBER, value: 3.14)
+            startActivity(intent)
+        }
+    }
+}
+
+inside SecondActivity.kt
+
+
+package com.example.activities
+
+import ...
+
+class SecondActivity : AppCompatActivity() {
+    private lateinit var textViewDataIntent: TextView
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_second)
+
+        textViewDataIntent = findViewById(R.id.textViewData)
+
+        val data = intent.extras   /// extracting data from second page
+
+        data?.let {
+            val message = data.getString(Constants.INTENT_MESSAGE_KEY)
+            val message2 = data.getString(Constants.INTENT_MESSAGE2_KEY) //giving key to extract the value
+            val number = data.getString(Constants.INTENT_DATA_NUMBER)
+
+            textViewDataIntent.text = message + "\n" + message2 + "\n" + number
+        }
+    }
+}
+
+NOTE= 
+Intent is a message object in Android used to start another activity, service, or broadcast.
+
+putExtra is a method used to attach additional data (called extras) to the Intent.
+
+These extras are stored as key–value pairs inside a Bundle.
+
+intent.putExtra(key: String, value: Any)
+
+key: A string identifier for the data. (Must be unique to avoid overwriting)
+
+value: The data you want to send (can be String, Int, Double, Boolean, Parcelable, etc.)
+
+
+HOW TO PASS DATA FROM SECOND PART 
+
+MainActivity
+
+class MainActivity : AppCompatActivity() {
+    private lateinit var goToButton: Button
+    private lateinit var textViewResult: TextView
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        val getResult =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+                if (it.resultCode == Constants.RESULT_CODE) {
+                    val message = it.data!!.getStringExtra(Constants.INTENT_MESSAGE2_KEY)
+                    textViewResult.text = message
+                }
+            }
+
+        textViewResult = findViewById(R.id.textView)
+        goToButton = findViewById(R.id.button_go_to_act)
+
+        goToButton.setOnClickListener {
+            val intent = Intent(this@MainActivity, SecondActivity::class.java)
+            intent.putExtra(Constants.INTENT_MESSAGE_KEY, "Hello from first Activity")
+            intent.putExtra(Constants.INTENT_MESSAGE2_KEY, "How was your day?")
+            intent.putExtra(Constants.INTENT_DATA_NUMBER, 3.14)
+            getResult.launch(intent)
+        }
+    }
+}
+
+SecondActivity
+
+package com.example.activities
+
+import ...
+
+class SecondActivity : AppCompatActivity() {
+    private lateinit var textViewDataIntent: TextView
+    private lateinit var goBackButton: Button
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_second)
+
+        textViewDataIntent = findViewById(R.id.textViewData)
+        goBackButton = findViewById(R.id.buttonGoBack)
+
+        goBackButton.setOnClickListener {
+            val intent = intent
+            intent.putExtra(Constants.INTENT_MESSAGE2_KEY, "Hello from the second Activity")
+            setResult(Constants.RESULT_CODE, intent)
+            finish()
+        }
+
+        val data = intent.extras
+
+        data?.let {
+            val message = data.getString(Constants.INTENT_MESSAGE_KEY)
+            val message2 = data.getString(Constants.INTENT_MESSAGE2_KEY)
+            val number = data.getDouble(Constants.INTENT_DATA_NUMBER)
+
+            textViewDataIntent.text = message + "\n" + message2 + "\n" + number
+        }
+    }
+}
+
+NOTE- 
