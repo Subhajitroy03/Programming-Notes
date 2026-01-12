@@ -1,0 +1,204 @@
+										FAST API NOTES
+
+
+----------------------------------------------
+BASIC
+-----------------------------------------------
+Pydantic is a data validation library used within FastAPI to check if the data coming into your API is correct and in the right format. It helps overcome Python's default lack of type checking, which is crucial for building robust APIs.
+
+Starlette is the component within FastAPI that manages how your API receives HTTP requests from clients and sends back responses. It handles the communication aspect of the API.
+
+Single Gateway Interface
+An SGI is one gateway endpoint that:
+	Receives all client requests
+	Routes them to the correct internal service/API
+	Applies cross-cutting concerns in one place
+	
+WSGI
+Web Server Gateway Interface
+Synchronous
+Old but rock-solid
+Used by Flask, Django (classic)
+Client → Web Server → WSGI App → Response
+
+Used when:
+Simple APIs
+Blocking I/O is acceptable
+
+
+ASGI
+Asynchronous Server Gateway Interface
+
+Async-first
+Handles HTTP, WebSockets, background tasks
+Used by FastAPI, Starlette, Django (async)
+Client → ASGI Server → Async App → Response
+
+Used when:
+High concurrency
+WebSockets
+Async DB / external calls
+
+WSGI and ASGI are Python-only interface standards.
+They define how a Python web server talks to a Python web application.
+
+
+Node.js already has this built in.
+Node HTTP Server ↔ Express App
+Express is literally a function wrapped around Node’s HTTP server.
+No extra interface standard was ever needed.
+
+--------------------------------------------------------------------------
+PRACTICAL
+-----------------------------------------------------------------------------
+1) TO CREATE AN VIRTUAL ENVIRONMENT FOR PACKAGES TO BE INSTALLED LOCALLY
+
+python -m venv myenv(name of environment)
+
+now to activate it , copy the path of script/activate and run it ( myenv\Scripts\activate )
+
+now if you do pip install ... it will be only for that project 
+
+if you want to deactivate , simply deactivate
+
+2) pip install fastapi uvicorn pydantic
+(uvicorn for web server in python)
+
+ (starlette is inbuilt in fastapi)
+to run the file , we should write "uvicorn main:app --reload" (filename-> main.py, app is the fastapi obj, --relooad = refresh when saved like nodemon)
+
+3)SAMPLE SERVER
+main.py
+
+from fastapi import FastAPI
+app=FastAPI()
+
+@app.get("/")
+def greet():
+	return {"message":"Hello World"}
+
+
+4) pydantic is used for data validation
+model.py
+
+from pydantic import BaseModel
+
+class Product(BaseModel):
+	id:int
+	name:str
+	desc:str
+	price:float
+	quantity:int
+	
+now in main.py, we can import it and make a list of product like
+
+products=[
+	Product(id=1,name="Book",desc="good book",price=45.26,quantity=5),
+	Product(id=2,name="Pen",desc="good pen",price=5.2,quantity=50)
+]
+
+5) In fastapi, swagger is inbuilt avaiable
+simply: localhost:8000/docs
+
+(can still use postman or insomania)
+
+
+6) How to use params
+
+app.get("/product/{id}")
+def get_product_by_id(id:int): ## var name should be same
+	..............
+	.logics and code..
+	.................
+7) POST REQ
+
+@app.post("/product")
+def add_product(product: Product):
+	products.append(product)
+	return product
+
+now this product will come from any react based app or by req body in swagger or postman
+
+NOTE:
+PUT replaces an entire resource with the data sent (idempotent), while PATCH applies partial modifications to a resource (not inherently idempotent); PUT requires sending the full resource, risking data loss for missing fields, whereas PATCH sends only changes, making it more efficient for smaller updates
+
+
+**PATH FUNCTION -> for more readibility of path parameters
+
+from fastapi import Path
+app.get("/product/{id}")
+def get_product_by_id(id:int,Path(...,description="id of user",example="01",)):
+	..........................
+	.....................
+	.............
+	
+** RAISING ERROR
+
+from fastapi import HTTPException
+
+and whereever needed, use
+
+raise HTTPException(status_code=404,detail="User not found")
+
+** USING QUERY PARAMETERS
+
+@app.get('/sort')
+def sort_patients(sort_by: str=Query(..., description="Sort on the basis of Height, Weight or BMI."),order: str = Query("ascending", description="Sort in ascending or descending order.")):
+
+    valid_fields = ["Height", "Weight", "BMI"]
+    
+    if sort_by not in valid_fields:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid field. Select from {valid_fields}"
+        )
+    
+    if order not in ["ascending", "descending"]:
+        raise HTTPException(
+            status_code=400, 
+            detail="Invalid order. Select between ascending and descending."
+        )
+
+    .................
+	...code..........
+	................
+	
+	
+--------------------------------------------------------
+FOR DATABASE CONNECTION
+--------------------------------------------------------
+
+SQLAlchemy is an open-source Python SQL toolkit and Object-Relational Mapper (ORM) library that simplifies interaction with relational databases
+
+pip install sqlalchemy
+pip install mysql-connector-python   (driver)
+
+--------------------------------------------------
+database.py
+--------------------------------------------------
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+db_url="full link"
+engine=create_engine(db_url)
+session=sessionmaker(autocommit=False,autoflush=False,bind=engine)
+
+
+------------------------------------------------------
+database_model.py
+-------------------------------------------------------
+
+from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
+
+class Product(Base):
+    __tablename__ = "product"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
+    description = Column(String)
+    price = Column(Float)
+    quantity = Column(Integer)
+
