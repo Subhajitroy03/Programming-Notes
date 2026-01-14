@@ -163,7 +163,97 @@ def sort_patients(sort_by: str=Query(..., description="Sort on the basis of Heig
 	...code..........
 	................
 	
-	
+** MORE ABOUT PYDANTIC MODEL ***
+
+Best Example of Pydantic Model
+
+from pydantic import BaseModel, EmailStr, AnyUrl, Field
+from typing import List, Dict, Optional
+
+class Patient(BaseModel):
+
+    name: str = Field(max_length=50)  // Field is to set constraints, here name must be max 50 char
+    email: EmailStr                    // custom data type from pydantic , here for valid email
+    linkedin_url: AnyUrl               // custom data type from pydantic , here for valid URL
+    age: int = Field(gt=0, lt=120)     // age must be between 0 and 120
+    weight: float = Field(gt=0)        // weight must be greater than 0
+    married: bool = False              // seting default values 
+    allergies: Optional[List[str]] = None  // Optional is used to make it optional and default is None
+    contact_details: Dict[str, str]  //using Dict and List to check datatype of its element or key or value
+
+**USING ANNOTATED**
+
+This is used to add metadata
+
+class Patient(BaseModel):
+
+    name: Annotated[str, Field(
+        max_length=50,
+        title='Name of the patient',
+        description='Give the name of the patient in less than 50 chars',
+        examples=['Nitish', 'Amit']
+    )]
+    email: EmailStr
+    linkedin_url: AnyUrl
+    age: int = Field(gt=0, lt=120)
+    weight: Annotated[float, Field(gt=0, strict=True)]  //Strict:True means it will not change datatype
+    married: Annotated[bool, Field(default=None, description='Is the patient married or not')]
+    allergies: Annotated[Optional[List[str]], Field(default=None, max_length=5)]
+    contact_details: Dict[str, str]
+
+**USING FIELD VALIDATORS**
+
+USED TO APPLY CUSTOM LOGIC ON DATA
+
+from pydantic import BaseModel, Field, field_validator
+from typing import List, Dict
+
+class Patient(BaseModel):
+    name: str
+    age: int
+    weight: float
+    married: bool
+    allergies: List[str] = Field(default_factory=list)
+    contact_details: Dict[str, str]
+
+    @field_validator("name")   	      /// write the name of field here
+    @classmethod                     /// must write it
+    def validate_name(cls, value: str):   // function to apply checks
+        if len(value.strip()) < 2:
+            raise ValueError("Name must have at least 2 characters")
+        if any(char.isdigit() for char in value):
+            raise ValueError("Name must not contain numbers")
+        return value.strip()
+
+    @field_validator("age")
+    @classmethod
+    def validate_age(cls, value: int):
+        if value < 0 or value > 120:
+            raise ValueError("Age must be between 0 and 120")
+        return value
+
+** MODEL VALIDATORS **
+
+Used when we need multiple fields to check a single field
+
+eg- if age>60 , there should be an emergency contact in contact dictionary
+
+class Patient(BaseModel):
+    name: str
+    email: EmailStr
+    age: int
+    weight: float
+    married: bool
+    allergies: List[str]
+    contact_details: Dict[str, str]
+
+    @model_validator(mode='after')
+    def validate_emergency_contact(cls, model):
+        if model.age > 60 and 'emergency' not in model.contact_details:
+            raise ValueError('Patients older than 60 must have an emergency contact')
+        return model
+    
+
 --------------------------------------------------------
 FOR DATABASE CONNECTION
 --------------------------------------------------------
