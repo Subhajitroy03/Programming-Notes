@@ -1,0 +1,462 @@
+DOCKER
+Docker is a tool that puts your app and everything it needs into one box, so it runs the same on every computer. Normally, an app may work on your laptop but fail on another system because software versions or settings are different. Docker solves this by packaging the app, required software, and settings together, so if Docker works on a computer, the app will work too. This makes it easier to share projects, avoid setup problems, and run the same app on your computer, your friend’s computer, or a server without extra headaches.
+
+Docker Image vs Docker Container:
+
+A Docker image is like a recipe or template. It contains instructions and files needed to run an app, but it is not running. You cannot “use” it directly—it just sits there.
+
+A Docker container is what you get when you run an image. It is the live, running version of the app. You can start it, stop it, and delete it.
+
+Simple analogy:
+
+Image = blueprint 
+Container = actual house 
+
+One image can create many containers, just like one recipe can cook many meals.
+If the container stops, the image still exists. If the image is deleted, you can’t create new containers.
+------------------------------------------------------------------------------------------------
+example- 
+
+** docker run -it ubuntu **
+1. docker run
+
+Create a new container from an image
+Start it immediately
+If the image does not exist locally, Docker pulls it first.
+
+2. ubuntu
+
+This is the Docker image name (official Ubuntu Linux image).
+It is not a full OS boot—it’s just a minimal Ubuntu filesystem.
+Ubuntu
+
+3. -it (two flags combined)
+
+-i → interactive
+Keeps STDIN open
+Allows you to type commands
+
+-t → tty
+Allocates a terminal
+Makes it feel like a real shell
+Without -it, the container would start and exit immediately.
+
+What happens internally When you run:
+
+docker run -it ubuntu
+
+Docker:
+
+Creates a container from the Ubuntu image
+
+Starts the default command of the image (/bin/bash)
+
+Attaches your terminal to that process
+
+You are now inside the container, not your host machine.
+------------------------------------------------------------------------------------------
+What "docker container ls" means
+
+docker container ls lists only the containers that are currently running on your system.
+
+It does NOT show:
+
+stopped containers
+
+exited containers
+
+If a container is not running, it won’t appear here.
+
+"docker container ls -a" lists ALL containers, no matter their state.
+-------------------------------------------------------------------------------------------
+***docker start command***
+
+What it does
+docker start <container_id_or_name>
+
+
+Starts an existing, stopped container.
+Uses the same container
+Same filesystem, same data, same config
+Does not create a new container
+If the container was created earlier and is in Exited state, docker start just brings it back to life.
+
+**docker stop command***
+What it does
+docker stop <container_id_or_name>
+
+Gracefully stops a running container.
+-------------------------------------------------------------------------------------------
+DIFFERENCE:
+1) docker run vs docker start
+****docker run*****
+docker run -it ubuntu
+
+What it really does:
+Creates a NEW container from an image
+Starts it
+(optionally) attaches your terminal
+
+Every time you run docker run, you get a new container.
+
+Use this when:
+the container does not exist yet
+you want a fresh environment
+
+***docker start******
+docker start <container_id>
+
+What it really does:
+Starts an existing stopped container
+Does NOT create a new one
+Use this when:
+the container already exists
+you want the same data and filesystem
+
+Hard rule:
+
+If you keep using docker run, you keep creating containers.
+If you want to reuse one, use docker start.
+------------------------------------------------------------------------------------------------
+*** What does -ai mean in docker start -ai? ***
+Flags breakdown
+
+-a → attach STDOUT / STDERR to your terminal
+-i → keep STDIN open (interactive input)
+
+So:
+docker start -ai <container>
+means:
+
+“Start the container and attach my terminal to it interactively.”
+
+Without -ai, the container starts in the background and you see nothing.
+----------------------------------------------------------------------------------------------
+**Can you use -it with docker start?***
+
+❌ No.
+
+-t (TTY allocation) is only valid during container creation
+
+docker start does not create a container
+
+So -t makes no sense here and is not allowed
+
+That’s why Docker gives you -a -i instead.
+----------------------------------------------------------------------------------------------------
+What docker exec actually does
+
+docker exec runs a new command inside an already running container.
+
+Important constraints:
+
+The container must be running
+It does not restart the container
+It does not change the main process
+
+When the command ends, exec ends
+
+Think of it as: “temporarily enter a running container to run something.”
+-----------------------------------------------------------------------------------------
+docker exec -it <container> bash
+Meaning (flag by flag)
+
+-i → keep STDIN open
+
+-t → allocate a terminal
+
+<container> → target running container
+
+bash → command to run inside it
+
+What happens:
+
+Docker starts a new bash process inside the container
+
+Your terminal is attached to it
+
+You get an interactive shell
+
+You are NOT starting the container.
+You are NOT replacing the main process.
+
+-----------------------------------------------------------------------------
+docker exec <container> <command>
+
+Example:
+
+docker exec my_container ls /app
+
+What happens:
+
+Docker runs one command inside the container
+Output is printed
+Command finishes
+You’re back to host terminal
+No shell. No interaction.
+
+Why exec exists ::
+
+Without exec, you’d have to:
+
+stop the container
+restart it interactively
+break production systems
+
+exec lets you:
+
+inspect logs
+debug
+run admin commands
+check files
+without stopping anything
+
+exec vs start -ai (don’t confuse these)
+Command	Purpose
+docker start -ai	Start a stopped container and attach
+docker exec -it	    Run a new process inside a running containers
+-------------------------------------------------------------------------------------
+docker images 
+OR
+docker image ls
+
+It lists all Docker images stored locally on your machine.
+----------------------------------------------------------------------------------------
+** PORT MAPPING **
+
+What is PORT mapping? (clear + technical)
+
+Port mapping connects a port on your computer (host) to a port inside a Docker container.
+Without it, services running inside containers are isolated and unreachable from outside.
+
+The core problem
+
+Containers have their own network.
+If an app inside a container listens on port 3000, your browser cannot access it directly.
+
+So this fails:
+
+localhost:3000 ❌
+
+Because 3000 exists inside the container, not on your machine.
+
+What port mapping does
+
+Port mapping forwards traffic from:
+
+HOST_PORT → CONTAINER_PORT
+
+Example:
+
+docker run -p 8080:3000 node-app
+
+Meaning:
+
+8080 → port on your machine
+3000 → port inside the container
+
+Now:
+
+localhost:8080 ✅ → container:3000
+
+Syntax (don’t mess this up)
+-p <host_port>:<container_port>
+
+Left side = where you access from browser
+Right side = where app listens inside container
+-------------------------------------------------------------------------------------------------
+**How to set environment variables with docker run**
+
+Environment variables (env vars) are key–value pairs passed into a container at runtime. Apps read them for config (ports, DB URLs, secrets, modes).
+
+1) Set a single env var 
+docker run -e PORT=3000 my-app
+
+Meaning:
+PORT is available inside the container
+
+Your app can read it as process.env.PORT, $PORT, etc.
+
+2) Set multiple env vars
+docker run \
+  -e NODE_ENV=production \
+  -e DB_HOST=localhost \
+  -e DB_PORT=5432 \
+  my-app
+
+Each -e adds one variable.
+
+3) Use an env file (cleaner, scalable)
+
+Create a file .env:
+
+PORT=3000
+DB_URL=mongodb://localhost:27017/app
+JWT_SECRET=secret123
+
+Run:
+
+docker run --env-file .env my-app
+--------------------------------------------------------------------------------------------------
+Containize Nodejs Application
+
+Step1: Create a Node server 
+Step 2: Make a ".dockerignore" and add node modules, log files and env there (just like .gitignore , the files you dont want to go to docker)
+Step 3: Make a file "DockerFile" 
+and write the following into it: 
+
+
+FROM node:18-alpine       ## Selecting a base image on which we will make the image
+
+WORKDIR /app             #Creates /app inside container,Sets it as the current working directory
+
+COPY package*.json ./      #Copies package.json and package-lock.json
+RUN npm install           #Installs dependencies inside the container
+
+COPY . .                 #Copies everything from your project into /app
+
+EXPOSE 8080            
+
+CMD ["npm", "start"]   #When container starts, run npm start as the main process(from package.json)
+--------------------------------------------------------------------------------------------
+
+Now to build it:
+
+docker build -t node-web-app .
+What this means
+
+This command creates a Docker image from your Dockerfile.
+
+Breakdown : 
+
+	docker build → build an image
+
+	-t node-web-app → tag (name) the image as node-web-app
+
+	. → use the current directory as build context
+-------------------------------------------------------------------------------------------------
+** Docker caching **
+Docker caching is Docker re-using results of previous build steps (layers) instead of re-running them.
+
+Think of a Docker image as a stack of layers:
+
+Layer 1: Base image
+Layer 2: Install dependencies
+Layer 3: Copy source code
+Layer 4: Build app
+
+
+Each line in a Dockerfile → one layer
+
+Example Dockerfile (pay attention)
+	FROM node:18
+	WORKDIR /app
+	COPY package.json .
+	RUN npm install
+	COPY . .
+	RUN npm run build
+
+First build -> Nothing cached -> Everything runs -> Slow
+
+Second build (no changes) -> Every layer reused ->Build is fast
+
+IMP:
+
+Change ONE file
+// src/index.js changed
+
+What happens?
+
+Layers before COPY . . → cached
+Layers after → rebuilt
+
+This is why Dockerfile order matters.
+--------------------------------------------------------------------------------------------------
+
+										DOCKER COMPOSE
+
+1) JSON vs YAML (or YML)
+
+JSON → made for machines
+YAML → made for humans
+
+JSON
+	Uses {} and []
+	Requires quotes
+	Requires commas
+	Very strict
+
+YAML
+	Uses indentation
+	No commas
+	Quotes usually optional
+	Easier to read
+
+But we dont use YAML everywhere because machine has to understand the data type and thus slower than JSON
+
+eg - 
+YAML-> 
+
+name: The Ultimate Docker Course
+price: 149
+is_published: true
+tags:
+  - software
+  - devops
+author:
+  first_name: Mosh
+  last_name: Hamedani
+
+JSON ->
+
+{
+  "name": "The Ultimate Docker Course",
+  "price": 149,
+  "is_published": true,
+  "tags": [
+    "software",
+    "devops"
+  ],
+  "author": {
+    "first_name": "Mosh",
+    "last_name": "Hamedani"
+  }
+}
+----------------------------------------
+docker-compose.yml
+----------------------------------------
+
+version: "3.8"    ## Declares the Compose file format
+
+services:
+  web:              ## frontend setup          
+    build: ./frontend        ## Builds frontend from ./frontend/Dockerfile
+    ports:
+      - "3000:3000"           ## map the port of docker image to docker compose
+
+  api:                       ## backend setup
+    build: ./backend         ## Builds backend from ./backend/Dockerfile
+    ports:
+      - "3001:3001"           ## maping the port
+    environment:              ## setting the env variable 
+      DB_URL: "mongodb://db:27017/vidly"  
+					## db is the service name,Docker Compose creates an internal DNS , db resolves to the MongoDB container IP. So:api → db:27017.Using localhost here would be wrong
+  db:
+    image: "mongo:4.0-xenial"        #Pulls MongoDB image from Docker Hub
+    ports:
+      - "27017:27017"                 #This exposes MongoDB to your host machine.
+    volumes:
+      - vidly:/data/db
+
+volumes:
+  vidly:
+-------------------------------------------------------------------------------------
+
+docker compose up : Builds images,Creates network,Creates volumes,Starts containers,Streams logs
+
+docker compose down: Stops containers, Removes containers,Removes network
+
+docker compose build: Builds images only,Does NOT start containers
+
+docker compose ps: Shows Running services,Ports,Status
+
