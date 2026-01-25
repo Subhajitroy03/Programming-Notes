@@ -459,4 +459,156 @@ docker compose down: Stops containers, Removes containers,Removes network
 docker compose build: Builds images only,Does NOT start containers
 
 docker compose ps: Shows Running services,Ports,Status
+---------------------------------------------------------------------------------------
+Docker Volume
+-------------------------------------------------------------------------------------
+
+Containers are ephemeral.It means:
+
+Delete container → data inside it is gone
+Rebuild image → data inside it is gone
+
+Example:
+
+docker run -it ubuntu
+
+Inside container:
+
+echo "hello" > file.txt
+exit
+
+Now run again:
+
+docker run -it ubuntu
+cat file.txt
+
+❌ File doesn’t exist.
+
+Containers store processes, not data.
+
+So where does data go?
+
+👉 Docker Volumes
+
+A Docker volume is:
+
+A directory on the host machine
+Managed by Docker
+Mounted into a container
+Lives outside the container lifecycle
+
+
+STEP 1: docker volume create mydata
+
+Docker created a named volume called mydata
+It allocated a real directory on your host machine
+
+Important:
+
+No container exists yet
+This volume is just empty storage waiting to be used
+
+STEP 2: docker volume ls
+
+What this shows
+A list of all volumes Docker knows about
+
+STEP 3: docker volume inspect mydata
+
+
+This command answers ONE question:
+
+“Where is my data actually stored?”
+
+Output (simplified):
+
+{
+  "Name": "mydata",
+  "Mountpoint": "/var/lib/docker/volumes/mydata/_data"
+}
+
+Critical understanding
+
+/var/lib/docker/volumes/mydata/_data is a real folder on your host
+
+Docker mounts this folder into containers when you ask it to
+
+
+
+Mental model:
+
+Volume = host folder
+Mountpoint = where Docker keeps it
+Container path = where container sees it
+
+STEP 4: Attach volume to a container
+docker run -it \
+  --name test \
+  -v mydata:/data \
+  ubuntu
+
+Let’s break this brutally clean.
+
+-v mydata:/data
+
+This is the most important part.
+
+It means:
+
+Take volume mydata
+Mount it inside the container
+At path /data
+
+So now:
+
+/data inside the container
+↔ linked to
+/var/lib/docker/volumes/mydata/_data on host
+
+
+STEP 5: Write data inside the container
+
+Inside container:
+cd /data
+echo "persistent" > hello.txt
+exit
+
+What happened here
+
+hello.txt was created inside /data
+
+/data is NOT container’s internal filesystem
+
+It is the mounted volume
+
+So Docker writes:
+
+/var/lib/docker/volumes/mydata/_data/hello.txt
+
+
+STEP 6: Remove the container
+docker rm test
+
+What Docker does NOT delete
+
+❌ the volume
+
+❌ the data inside the volume
+
+Why?
+Because volumes are independent objects.
+
+This is intentional. Otherwise volumes would be useless.
+
+STEP 7: Run a new container using the SAME volume
+docker run -it -v mydata:/data ubuntu
+
+What Docker does now
+Creates a brand-new container
+Mounts the existing volume mydata
+Attaches it again at /data
+
+New container.
+Same volume.
+Same data.
 
