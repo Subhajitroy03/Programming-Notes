@@ -1,0 +1,464 @@
+REDIS NOTES
+-------------------------------
+What Redis actually is
+
+Redis is an in-memory data store.
+Data lives in RAM, not on disk → extremely fast (microseconds).
+
+Why people use Redis (real reasons, no fluff)
+
+Speed
+
+	Database → disk → slow
+	Redis → RAM → very fast
+	Use it when your app feels sluggish under load
+
+Reduce database pressure
+
+	Repeatedly hitting the DB for the same data is dumb
+	Cache the result in Redis → fewer DB queries → DB doesn’t choke
+
+Session storage
+
+	Login/session data must be fast and shared across servers
+	Redis handles this cleanly
+
+Temporary data
+
+	OTPs, rate-limits, verification codes
+	Redis can auto-expire data (TTL)
+
+Counters & queues
+
+	Likes, views, API rate limiting
+	Job queues, background tasks
+---------------------------------------------------------------------------------------------------
+Redis Stack using Docker 
+--------------------------------------------------------------------------------------------------
+This guide shows:
+
+	How to install Redis Stack using Docker
+	How to run and use Redis from the CLI
+	How to access the Redis Stack GUI (RedisInsight)
+
+1. What you need first :: Docker installed and Docker running
+
+docker --version
+docker ps
+
+If these work, you’re good.
+
+2. Install & run Redis Stack in Docker
+
+>>>> docker run -d --name redis-stack -p 6379:6379 -p 8001:8001 redis/redis-stack:latest
+
+What this does:
+
+	-d → runs Redis in background (detached mode)
+	--name redis-stack → container name
+	6379 → Redis server port (used by apps & CLI)
+	8001 → RedisInsight GUI (web dashboard)
+	redis/redis-stack → Redis Stack image (includes Redis + GUI)
+
+Redis Stack includes:
+
+	*Redis Server
+	*RedisInsight (GUI)
+	*RedisJSON, Search, TimeSeries, etc.
+
+3. Check if Redis is running
+
+docker ps
+
+You should see:
+redis-stack
+
+4. Connect to Redis using CLI (no GUI)
+
+Run Redis CLI inside the container:
+
+>> docker exec -it redis-stack redis-cli
+
+You’ll see:  127.0.0.1:6379>
+Test:
+
+>> PING
+
+Output:
+
+>> PONG
+
+""
+127.0.0.1:6379> ping
+PONG
+127.0.0.1:6379> set a 20
+OK
+127.0.0.1:6379> get a
+"20"
+
+""
+That means Redis is working.
+
+Try some basic commands
+SET language "Redis"
+GET language
+
+5. Open Redis Stack GUI (RedisInsight) from Docker
+
+Redis Stack already includes the GUI.
+
+Open in browser:
+http://localhost:8001
+
+7. Connect RedisInsight (GUI) to Redis
+
+Inside the GUI:
+
+Click Add Redis Database
+
+	Host: localhost
+	Port: 6379
+	Click Connect
+
+Now you can:
+
+	View keys visually
+	Run commands
+	Monitor memory & performance
+--------------------------------------------------------------------------------------------------
+
+SET GET METHOD
+
+used to set any value and get any existing value
+eg-
+SET name Subhajit
+>>OK
+GET name
+>>"Subhajit"
+
+
+Convension of giving name to keys:
+<entity>:<id> value
+
+eg-  id    name
+	=============
+	1     Subhajit Roy
+	2     Avrajit Dey
+	3     Arjya Das
+	
+so , SET user:1 Subhajit Roy
+	SET user:2 Avrajit Dey ,,, etc etc
+	
+Advantage: IN GUI , you will get a folder with user and rest all value with their id
+-------------------------------------------------------------------------------------------------------
+
+1. SET
+SET key value --> Stores a string value for a key.
+If the key already exists → value is overwritten.
+Example
+
+SET name "Subhajit"
+GET name
+
+Result: 
+"Subhajit"
+
+Use when: You don’t care if old data gets replaced.
+
+2. SETNX (Set if Not eXists)
+SETNX key value
+
+What it does: Stores the value only if the key does NOT already exist.
+
+If the key exists → does nothing.
+
+Return value
+1 → key was set
+0 → key already existed
+
+Example
+SETNX lock "123"
+SETNX lock "456"
+
+Second command fails silently.
+
+Why this matters
+Used for locks (only one process should succeed).
+
+3. GET
+
+What it does
+Retrieves the value stored at the key.
+
+Example
+
+GET name
+
+If key doesn’t exist:
+
+(nil)
+
+4. MGET (Multi-GET)
+MGET key1 key2 key3
+
+What it does
+
+Retrieves multiple values in one command.
+
+Faster than calling GET multiple times.
+
+Example
+
+MGET name city age
+
+Output
+
+1) "Subhajit"
+2) "Kolkata"
+3) (nil)
+------------------------------------------------------------------------------------------------
+
+REDIS WITH NODEJS
+---------------------
+USE: npm i ioredis
+
+CODE:
+
+client.js
+------------
+const { Redis } = require('ioredis')
+const client = new Redis()
+module.exports = { client }
+
+main.js
+---------
+
+const { client } = require("./client");
+
+async function init() {
+  // SET value
+  await client.set("msg:6", "Hey from Node.js");
+  
+  // Set expiry in seconds
+  await client.expire("msg:6", 10);
+
+  // GET value
+  const result = await client.get("msg:6");
+  console.log("Result ->", result);
+}
+
+init();
+--------------------------------------------------------------------------------------------------
+DATA TYPES IN REDIS
+---------------------------
+1️) STRING 
+Command
+SET name "Subhajit"
+
+Line-by-line
+
+SET → store a value
+"Subhajit" → value (string)
+Redis stores:
+name → "Subhajit"
+
+Read value
+
+GET name
+Returns "Subhajit"
+
+Numbers as strings
+
+SET count 10
+INCR count
+SET count 10 → stores "10" as a string
+INCR count → Redis converts it to number, adds 11
+Result → 11
+
+Expiry
+SET token "abc123"
+EXPIRE token 60
+
+EXPIRE → delete key after 60 seconds
+
+If key doesn’t exist → nothing happens
+
+Best method : SET token "abc123" EX 60
+EX → expiry in seconds
+--------------------------------------------------------------
+String methods
+-----------------------
+SET: Store value
+GET: Read value
+INCR / DECR: Increase / decrease number
+APPEND:	Add text
+STRLEN:	Length of value
+SETEX:	Set + expiry
+
+2️) HASH (Object with fields)
+
+Create hash
+HSET user:1 name "Subhajit" age 24
+
+	Line-by-line
+
+		HSET → Hash Set
+		user:1 → key
+		name → field
+		"Subhajit" → value
+		age 24 → another field-value pair
+
+Stored as:
+user:1 → { name: "Subhajit", age: "24" }
+
+Get one field: HGET user:1 name
+Returns:
+
+"Subhajit"
+
+Get everything: HGETALL user:1
+Returns:
+
+name
+Subhajit
+age
+24
+
+Update single field
+HSET user:1 age 25
+
+Only age changes.
+
+Hash methods
+Command	Meaning
+HSET	Set field
+HGET	Get one field
+HGETALL	Get all fields
+HDEL	Delete field
+HEXISTS	Check field
+HINCRBY	Increment number field
+--------------------------------------------------------------------------------------
+3️)LIST (Ordered items)
+
+Push item (left)
+LPUSH tasks "task1"
+
+Adds item to start of list
+
+Push item (right)
+RPUSH tasks "task2"
+
+List becomes:
+
+["task1", "task2"]
+
+Remove item
+LPOP tasks
+
+Removes first item
+
+Returns "task1"
+
+Read range
+LRANGE tasks 0 -1
+
+0 → start
+-1 → till end
+
+Returns full list
+
+Blocking pop (important)
+BLPOP tasks 0
+
+Waits until item arrives
+
+OR
+
+BLPOP tasks 5
+Waits 5 seconds
+
+If nothing arrives → returns nil
+
+List methods
+Command	Meaning
+LPUSH / RPUSH	Add
+LPOP / RPOP	Remove
+LRANGE	Read
+LLEN	Length
+BLPOP	Blocking pop
+----------------------------------------------------------------------------------------
+
+4️) SET (Unique items)
+
+Add values
+SADD roles admin editor admin
+
+Stored as: { "admin", "editor" }
+
+Duplicate ignored.
+
+Check membership
+
+SISMEMBER roles admin
+Returns: 1 (true)
+
+Get all values
+
+SMEMBERS roles
+
+Set operations
+
+SUNION set1 set2
+SINTER set1 set2
+SDIFF set1 set2
+
+Set methods
+Command	Meaning
+SADD	Add
+SREM	Remove
+SISMEMBER	Check
+SMEMBERS	Get all
+SCARD	Count
+
+-------------------------------------------------------------------------------
+
+EXPRESS CODE:
+
+const express = require("express");
+const axios = require("axios");
+const { Redis } = require("ioredis");
+
+const app = express();
+const client = new Redis(); // default localhost:6379
+
+app.get("/", async (req, res) => {
+  try {
+    // 1️) Check cache first
+    const cacheValue = await client.get("todos");
+
+    if (cacheValue) {
+      console.log("Serving from Redis cache");
+      return res.json(JSON.parse(cacheValue));
+    }
+
+    // 2️) Fetch from API if cache miss
+    console.log("Fetching from API");
+    const { data } = await axios.get(
+      "https://jsonplaceholder.typicode.com/todos"
+    );
+
+    // 3️) Store in Redis with expiry (30 seconds)
+    await client.set("todos", JSON.stringify(data), "EX", 30);
+
+    // 4️) Return response
+    return res.json(data);
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.listen(3000, () => {
+  console.log("Server running on port 3000");
+});
