@@ -1,0 +1,325 @@
+WebRTC (Web Real-Time Communications)
+A technology that allows browsers to talk directly to each other without needing a middleman server to handle the data. Think of it as calling someone directly on the phone rather than leaving a message for a secretary to pass on.
+
+Here is a simple breakdown:
+
+Peer-to-Peer: WebRTC connects two computers directly, enabling fast, real-time video calls, audio chats, and file transfers.
+How it Works: Even though it's direct, browsers still need help finding each other. They use special servers (STUN/TURN) to discover their public address on the internet, and a small signaling server to exchange information to start the connection.
+Group Calls: While WebRTC is great for two people, larger group calls use a system called an SFU, which acts as a central hub to manage the video streams for everyone in the meeting.
+
+
+
+1. PRIVATE IP vs PUBLIC IP
+
+Private IP:
+
+* Address used inside a local network (WiFi / LAN)
+* Assigned by your router
+* Not accessible from the internet directly
+
+Examples:
+192.168.x.x
+10.x.x.x
+172.16.x.x
+
+Used for:
+
+* Communication between devices in the same network
+
+Example:
+Laptop → Printer
+Phone → TV
+
+---
+
+Public IP:
+
+* Address assigned by your Internet Service Provider (ISP)
+* Visible on the internet
+* Shared by all devices in your home or office
+
+Example:
+49.36.112.45
+
+Router performs:
+NAT (Network Address Translation)
+
+Meaning:
+Multiple private IP devices use one public IP to access the internet.
+
+---
+
+## Core Problem:
+
+Two devices on different networks cannot connect using private IPs.
+
+Therefore:
+They must discover their public IP and network path.
+
+This is why STUN exists.
+
+---
+
+2. STUN SERVER — WHY WE NEED IT
+
+---
+
+STUN stands for:
+Session Traversal Utilities for NAT
+
+Purpose:
+To discover your public IP address and port.
+
+Simple definition:
+STUN tells your device:
+"How the internet sees you."
+
+---
+
+What STUN does:
+
+1. Your browser sends request to STUN server
+2. STUN replies with your public IP and port
+3. Browser uses this information to connect to peers
+---
+
+Without STUN:
+Devices behind routers would not know their internet-facing address.
+
+---
+
+3. SOCKET / SIGNALING SERVER — WHY IT IS REQUIRED
+
+---
+
+Purpose:
+To exchange connection details between users.
+
+Important:
+It does NOT carry video or audio.
+It only shares setup information.
+
+---
+
+What information is exchanged:
+
+* IP address
+* Port
+* Media capabilities
+* Network candidates
+* Session description
+
+---
+
+Typical technologies:
+
+* WebSocket
+* Socket.io
+* HTTP API
+
+---
+
+Simple Flow:
+
+User A joins room
+User B joins room
+
+A sends connection info → Server
+Server forwards info → B
+
+B sends connection info → Server
+Server forwards info → A
+
+After exchange:
+Direct connection begins.
+
+---
+
+## Key Rule:
+
+Peers cannot connect directly at first.
+They need a signaling server to introduce them.
+
+---
+
+4. FULL WEBRTC CONNECTION FLOW
+
+---
+
+Step 1:
+User joins room
+
+Step 2:
+Connection details exchanged via signaling server
+
+Step 3:
+STUN discovers public IP
+
+Step 4:
+Peers attempt direct connection
+
+Step 5:
+Media starts flowing
+
+---
+
+Sequence:
+
+User A → Signaling Server → User B
+User A → STUN
+User B → STUN
+User A ↔ User B
+
+---
+
+5. TURN SERVER — BACKUP CONNECTION
+
+---
+
+Purpose:
+Relay data when direct connection fails.
+
+Used when:
+
+* Strict firewall
+* Corporate network
+* Symmetric NAT
+* Blocked ports
+
+---
+
+Flow:
+
+User A → TURN Server → User B
+
+---
+
+Disadvantage:
+All data passes through your server.
+
+Meaning:
+
+* Higher bandwidth usage
+* Higher cost
+* More latency
+
+---
+
+Reality:
+TURN is optional in theory.
+TURN is required in production.
+
+---
+
+6. SFU — SELECTIVE FORWARDING UNIT
+
+---
+
+Purpose:
+Handle group video calls efficiently.
+
+---
+
+Problem without SFU:
+
+Every user sends video to every other user.
+
+Connections formula:
+
+n × (n − 1)
+
+Example:
+
+5 users
+5 × 4 = 20 streams
+
+This overloads:
+
+* CPU
+* Bandwidth
+* Network
+
+---
+
+Solution:
+
+Use SFU.
+
+---
+
+How SFU works:
+
+Each user sends one stream to the server.
+
+Server forwards streams to other users.
+
+---
+
+Flow:
+
+User A → SFU
+User B → SFU
+User C → SFU
+
+SFU distributes streams to all users.
+
+---
+
+Benefits:
+
+* Scales well
+* Lower bandwidth per user
+* Lower CPU usage
+* Works for large meetings
+
+---
+
+Used by:
+
+Zoom
+Google Meet
+Microsoft Teams
+Discord
+
+---
+
+7. DISADVANTAGES OF WEBRTC
+
+---
+
+1. Network complexity
+   Connection success depends on network conditions.
+
+2. TURN server cost
+   Relaying video consumes large bandwidth.
+
+3. Debugging difficulty
+   Issues may come from infrastructure, not code.
+
+4. Scaling limitations
+   Peer-to-peer does not scale for large groups.
+
+---
+
+8. CLEAN MENTAL MODEL (IMPORTANT)
+
+---
+
+Private IP
+→ internal network address
+
+Public IP
+→ internet address
+
+STUN
+→ discovers public IP
+
+Signaling server
+→ introduces peers
+
+TURN
+→ relays data if direct connection fails
+
+SFU
+→ manages group video calls
+

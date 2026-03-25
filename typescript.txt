@@ -1,0 +1,539 @@
+HOW TO INSTALL TS:
+--> npm i -g typescript (FOR GLOBAL) or npm i -D typescript (Project wise)
+and to check version: tsc --version
+
+How to install Ts in a project:
+1) npm init
+2) npm install --save-dev typescript
+3) npx tsc --init
+----------------------------------------------------------------------------------------
+1) Make a "src" folder and a "dist" folder ::  src (where you keep ts files) and dist (where you keep js files)
+
+how to compile :: npx tsc
+
+and then run:  node dist/index.js
+or make change in package.json and in scripts , start: "node dist/index.js"
+------------------------------------------------------------------------------------------
+sample index.ts code:
+
+function greet(person:string):string{
+	return `Hello ${person}, Welcome`
+}
+--------------------------------------------------------------------------------------------
+Type Annotation vs Type Inference 
+
+Type Annotation
+Definition: Explicitly specifying the type of a variable, function parameter, or return value.
+
+Syntax:
+let age: number = 20;
+
+function add(a: number, b: number): number {
+  return a + b;
+}
+
+Used when:
+Function parameters, return types, public APIs, empty arrays/objects.
+Pros: Clear, strict, prevents unintended type changes.
+Cons: Can be redundant if overused.
+
+Type Inference
+Definition: TypeScript automatically determines the type based on assigned value.
+
+Syntax:
+
+let age = 20;        // inferred as number
+const name = "Raj"; // inferred as string
+
+Used when:
+Local variables and obvious assignments.
+
+Pros: Less code, cleaner, refactor-friendly.
+Cons: Types may widen unintentionally.
+------------------------------------------------------------------------------------------------
+
+Data Types in TypeScript
+
+1. Primitive Types
+
+** number – integers, floats
+let age: number = 21;
+
+** string – text
+let name: string = "Subhajit";
+
+** boolean – true / false
+let isValid: boolean = true;
+
+** symbol – unique identifiers
+let id: symbol = Symbol("id");
+
+2. Special Types
+
+** any – disables type checking (avoid)
+let x: any = 10;
+
+** unknown – safer alternative to "any"
+let x: unknown;
+
+** void – no return value
+function log(): void {}
+
+** null & undefined
+
+let a: null = null;
+let b: undefined = undefined;
+
+** never – function never returns
+
+function error(): never {
+  throw new Error("fail");
+}
+----------------------------------------------------------------------------------------------------
+UNION DATA TYPE: 
+
+let subs: number | string = "1M";
+subs=10;   /// this var can be both number as well as string
+
+Example in Production: 
+let apiRequestStatus: "pending" | "success" | "error"= "pending";  // like a ENUM
+
+let airlineSeat: "aisle" | "window" | "middle" ="aisle"; // can be only three values
+
+airlineSeat = "aisle";
+
+Example:
+
+const orders = ["12", "20", "28", "42"];
+let currentorder: string | undefined;   (avoid using ANY data type, use union better)
+
+for (let order of orders) {
+  if (order === "28") {
+    currentorder = order;
+    break;
+  }
+}
+
+console.log(currentorder);
+-----------------------------------------------------------------------------------------
+Type Narrowing
+-----------------------------------------------------------------------------------------
+EG 1: 
+
+function getChai(kind: string | number) {   //kind can be both string and number
+  if (typeof kind === "string") {
+    return `Making ${kind} chai...`;   // here kind is always string, so we can use methods of strings here
+  }
+  return `Chai oder: ${kind}`;   // here kind is always number, so we can use methods of numbers here
+}
+
+>>> By doing this we can use methods of particular data types
+
+eg2: 
+function serveChai(msg?: string) {
+  if (msg) {
+    return `Serving ${msg}`;  // if msg is present, it will be returned here
+  }
+  return `Serving default masala chai`;
+}
+
+----------------------------------------------------------------------------------------
+
+Making custom data types:
+
+type ChaiOrder = {
+  type: string
+  sugar: number
+}
+
+// now type checking 
+function isChaiOrder(obj: any): obj is ChaiOrder {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    typeof obj.type === "string" &&
+    typeof obj.sugar === "number"
+  )
+}
+
+// 
+function isChaiOrder(obj: any): obj is ChaiOrder
+This does TWO things:
+
+Returns true or false
+If it returns true, TypeScript will treat obj as ChaiOrder
+That’s the special part.
+//
+
+--------------------------------------------------------------------------------
+eg - 
+type MasalaChai = { type: "masala"; spicelevel: number };
+type GingerChai = { type: "ginger"; amount: number };
+type ElaichiChai = { type: "elaichi"; aroma: number };
+
+type Chai = MasalaChai | GingerChai | ElaichiChai;
+
+function makeChai(order: Chai): string {
+  switch (order.type) {
+    case "masala":
+      return `Making masala chai with spice level ${order.spicelevel}`;
+
+    case "ginger":
+      return `Making ginger chai with ginger amount ${order.amount}`;
+
+    case "elaichi":
+      return `Making elaichi chai with aroma level ${order.aroma}`;
+
+    default:
+      const _exhaustiveCheck: never = order;
+      return _exhaustiveCheck;
+  }
+}
+
+/*
+Short Note About the Code
+
+This code demonstrates a discriminated union in TypeScript.
+Three different types are defined:
+MasalaChai → has type: "masala" and spicelevel
+GingerChai → has type: "ginger" and amount
+ElaichiChai → has type: "elaichi" and aroma
+All three are combined into a union type:
+type Chai = MasalaChai | GingerChai | ElaichiChai;
+
+This means a variable of type Chai can be any one of those three shapes.
+How makeChai Works
+The function takes order: Chai and uses:
+switch (order.type)
+The type field acts as a discriminator.
+Based on its value, TypeScript automatically narrows the type:
+
+If "masala" → order becomes MasalaChai
+
+If "ginger" → order becomes GingerChai
+
+If "elaichi" → order becomes ElaichiChai
+
+/*
+-------------------------------------------------------------------------------------------
+Forceful conversions/ Type Assersion:
+
+let response: any = "42";
+
+let numericLength: number = (response as string).length;  // Channging any to string
+----------------------------------------------------------------------------------
+
+Unknown data type:
+eg - 
+
+let newValue: unknown
+
+newValue = "chai"
+newValue = [1, 2, 3]
+newValue = 2.5
+
+if (typeof newValue === "string") {
+  newValue.toUpperCase();
+}
+
+///
+What is unknown?
+unknown means:
+“This value could be anything, but you must check before using it.”
+It is a safer version of any.
+////
+--------------------------------------------------------------------------------
+Try Catch Block in TS
+------------------------
+
+try {
+
+} catch (error) {
+    if (error instanceof Error) {   // IMP: check if error is an instance of Error class or not
+        console.log(error.message);
+    }
+
+    console.log("Error", error);
+}
+---------------------------------------------------------------------------------------
+INTERFACE IN TS
+---------------------------
+1) 
+Example where type fails but interface works
+❌ type cannot be merged
+type User = {
+  name: string;
+};
+
+type User = {   // ❌ Duplicate identifier
+  age: number;
+};
+
+✅ interface supports declaration merging
+interface User {
+  name: string;
+}
+
+interface User {
+  age: number;
+}
+
+const u: User = {
+  name: "Subhajit",
+  age: 22
+};
+
+
+Only interface allows this.
+
+2️) Example where interface fails but type works
+❌ Interface cannot define unions
+interface Status = "success" | "error"; // ❌ Invalid
+
+✅ Type supports unions
+type Status = "success" | "error";
+type ID = string | number;
+
+
+type is required for unions and primitives.
+
+3️) Syntax Difference (Extending)
+Using interface:
+
+interface Person {
+  name: string;
+}
+
+interface Employee extends Person {
+  salary: number;
+}
+
+Using type:
+
+type Person = {
+  name: string;
+};
+
+type Employee = Person & {
+  salary: number;
+};
+
+
+interface → extends
+type → intersection 
+---------------------------------------------------------------------------------------
+Union Type (|)
+----------------
+Meaning: OR type — value can be one of multiple types.
+
+Example:
+type TeaType = "masala" | "ginger" | "lemon";
+
+Variable can be any one of the listed values.
+
+Commonly used for:
+	String literals
+	Multiple possible input types
+	Optional variants
+
+Example:
+
+function orderChai(t: TeaType) {
+  console.log(t);
+}
+
+*Allows flexibility
+*Does NOT combine structures
+----------------------------------------------------------------------------------------------
+Intersection Type (&)
+-------------------------
+
+Meaning: AND type — combines multiple types into one.
+Example:
+
+type BaseChai = { teaLeaves: number };
+type Extra = { masala: number };
+
+type MasalaChai = BaseChai & Extra;
+
+Result:
+
+{
+  teaLeaves: number;
+  masala: number;
+}
+
+
+Must satisfy all combined types
+
+Used for:
+
+	Combining object structures
+	Extending functionality
+	Reusable type composition
+---------------------------------------------------------------------------------
+Duck Typing
+------------
+Example 1: 
+type Cup = { size: string };
+let smallCup: Cup = { size: "200ml" };
+let bigCup = { size: "500ml", material: "steel" };
+smallCup = bigCup;
+
+Example 2:
+type Brew = { brewTime: number };
+const coffee = { brewTime: 5, beans: "Arabica" };
+const chaiBrew: Brew = coffee;
+
+What Is Duck Typing Here?
+
+TypeScript uses structural typing, commonly called duck typing.
+Rule:
+If it looks like a type and has the required properties, it is that type.
+It doesn’t care about:
+Extra properties
+Object name
+
+Where it came from
+It only checks required structure.
+First Case: Cup
+type Cup = { size: string };
+Cup only requires:
+size: string
+
+Now:
+
+let bigCup = { size: "500ml", material: "steel" };
+smallCup = bigCup;
+
+Why allowed?
+Because:
+bigCup has size: string ✔
+Extra property material is ignored ✔
+
+TypeScript checks:
+Does bigCup have everything Cup requires? → Yes → Allowed.
+
+Second Case: Brew
+type Brew = { brewTime: number };
+Now:
+
+const coffee = { brewTime: 5, beans: "Arabica" };
+const chaiBrew: Brew = coffee;
+Why allowed?
+Because:
+coffee has brewTime: number ✔
+Extra beans property is ignored ✔
+
+----------------------------------------------------------------------------------------------
+Partial
+--------
+
+type Chai = {
+  name: string;
+  price: number;
+  isHot: boolean;
+};
+
+const updateChai = (updates: Partial<Chai>) => {
+  console.log("updating chai with", updates);
+};
+
+updateChai({ price: 25 });
+updateChai({ isHot: false });
+updateChai({});
+
+🔹 What Partial<T> Does
+Partial<T> is a built-in utility type.
+It converts all properties of a type into optional properties.
+
+Without Partial
+If you wrote:
+
+const updateChai = (updates: Chai) => {}
+Then this would be required:
+
+updateChai({
+  name: "Masala",
+  price: 25,
+  isHot: true
+});
+You must pass all fields.
+
+With Partial<Chai>
+Partial<Chai>
+
+Becomes internally:
+
+{
+  name?: string;
+  price?: number;
+  isHot?: boolean;
+}
+Now you can pass:
+
+updateChai({ price: 25 });   // ✅
+updateChai({ isHot: false }); // ✅
+updateChai({});              // ✅
+Because every property is optional.
+----------------------------------------------------------------------------
+
+Required
+---------
+Code: 
+
+type ChaiOrder = {
+  name?: string;
+  quantity?: number;
+};
+
+const placeOrder = (order: Required<ChaiOrder>) => {
+  console.log(order);
+};
+
+placeOrder({
+  name: "Masala Chai",
+  quantity: 2
+});
+
+Explanation:
+
+Required<T> — Short Explanation
+
+Required<T> makes all optional properties mandatory.
+
+Example
+type ChaiOrder = {
+  name?: string;
+  quantity?: number;
+};
+
+Both properties are optional.
+
+Now:
+
+Required<ChaiOrder>
+
+
+Becomes:
+
+{
+  name: string;
+  quantity: number;
+}
+
+In Your Function
+const placeOrder = (order: Required<ChaiOrder>) => { ... }
+
+This forces:
+
+placeOrder({
+  name: "Masala Chai",
+  quantity: 2
+}); // ✅
+
+But this fails:
+
+placeOrder({ name: "Masala Chai" }); // ❌ quantity missing
+-----------------------------------------------------------------------------------
+

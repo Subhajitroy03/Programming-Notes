@@ -1,0 +1,419 @@
+									DRIZZLE
+									-------
+
+1. Core Philosophy
+
+Prisma
+
+* Schema-first ORM
+* You define models in a Prisma schema file
+* Prisma generates a client SDK
+
+Example:
+
+
+model User {
+  id    String @id @default(uuid())
+  name  String
+  email String @unique
+}
+
+Then you use:
+
+const user = await prisma.user.findMany()
+
+
+Drizzle
+
+* SQL-first ORM
+* Tables defined directly in TypeScript
+* Very close to raw SQL
+
+Example:
+
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey(),
+  name: text("name"),
+  email: text("email").unique(),
+});
+
+
+Query:
+
+
+const result = await db.select().from(users)
+
+Key idea:
+You write TypeScript + SQL style queries directly.
+----------------------------------------------------------------------------------------------------
+
+
+Getting started
+1) Install:
+npm i drizzle-orm
+npm i <driver> (eg- Neon or Postgres)
+
+npm i --save-dev drizzle-kit
+
+2) Make a file at root level : "drizzle.config.ts" and make a folder inside SRC , "drizzle"  and inside that schema.ts
+
+Inside drizzle.config.ts:
+--------------------------
+
+import { defineConfig } from "drizzle-kit"
+
+export default defineConfig({
+  schema: "./src/drizzle/schema.ts",
+  out: "./src/drizzle/migrations",
+  driver: "pg",
+  dbCredentials: {
+    connectionString: process.env.DATABASE_URL as string
+  },
+  verbose: true,
+  strict: true
+})
+
+
+Inside src/drizzle/schema.ts
+-------------------------------
+
+import { pgTable, varchar, uuid } from "drizzle-orm/pg-core"
+
+export const UserTable = pgTable("user", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name", { length: 255 }).notNull()
+})
+
+
+(just an example)
+
+Run the following commands now:
+npx drizzle-kit generate:pg
+
+
+Now we will get a migration file:  src/drizzle/migrations
+
+to delete migration: Run: npx drizzle-kit drop
+
+Better in package.json , add script:
+
+"db:studio": "drizzle-kit studio"
+"db:generate": "drizzle-kit generate"
+"db:migrate": "drizzle-kit migrate"
+
+
+3) Now make a file inside src/drizzle: name -> migrate.ts
+
+Inside src/drizzle/migrate.ts
+--------------------------------
+
+import "dotenv/config"
+import { drizzle } from "drizzle-orm/postgres-js"
+import { migrate } from "drizzle-orm/postgres-js/migrator"
+import postgres from "postgres"
+
+const migrationClient = postgres(process.env.DATABASE_URL as string, { max: 1 })
+
+async function main() {
+  await migrate(drizzle(migrationClient), {
+    migrationsFolder: "./src/drizzle/migrations",
+  })
+
+  await migrationClient.end()
+}
+
+main()
+
+
+4) To migrate run the command: tsx src/drizzle/migrate.ts
+
+5) to View database: npx drizzle-kit studio
+
+6) Make a file inside src/drizzle and name it "db.ts"
+
+inside src/drizzle/db.ts
+--------------------------
+
+import { drizzle } from "drizzle-orm/postgres-js"
+import * as schema from "./schema"
+import postgres from "postgres"
+
+const client = postgres(process.env.DATABASE_URL as string)
+
+export const db = drizzle(client, { schema, logger: true })
+
+
+and if you use NEON DB,
+pnpm add drizzle-orm @neondatabase/serverless
+
+and then :
+
+import { drizzle } from "drizzle-orm/neon-http"
+import * as schema from "./schema"
+import { neon } from "@neondatabase/serverless"
+
+const sql = neon(process.env.DATABASE_URL as string)
+
+export const db = drizzle(sql, { schema, logger: true })
+
+
+Now our setup is ready and we can run this:
+
+import "dotenv/config"
+import { db } from "./drizzle/db"
+import { UserTable } from "./drizzle/schema"
+
+async function main() {
+  await db.insert(UserTable).values({
+    name: "Kyle",
+  })
+
+  const user = await db.query.UserTable.findFirst()
+  console.log(user)
+}
+
+main()
+
+(just an example)
+
+-----------------------------------------------------------------------------------------------
+
+
+
+DRIZZLE RELATIONS + CRUD Easy Revision Notes (TXT Format)
+
+  ------------------------
+  1) What is a Relation?
+  ------------------------
+
+A relation means:
+
+One table is connected to another table using an ID.
+
+That connection is created using a:
+
+FOREIGN KEY
+
+Example:
+
+users
+
+id
+
+posts
+
+id user_id
+
+Here:
+
+posts.user_id → users.id
+
+This means:
+
+Each post belongs to a user
+
+Golden Rule:
+
+Always ask:
+
+Which table stores the foreign key?
+
+  -----------------------
+  2) Types of Relations
+  -----------------------
+
+1)  One-to-Many
+
+One user → many posts
+
+Rule:
+
+Foreign key goes on the MANY side
+
+2)  Many-to-One
+
+Same relation, reverse direction
+
+Many posts → one user
+
+3)  One-to-One
+
+One user → one profile
+
+Rule:
+
+Foreign key + UNIQUE
+
+4)  Many-to-Many
+
+Post ↔ Tag
+
+Rule:
+
+You must create a middle table (junction table)
+
+  -------------------
+  3) Example Tables
+  -------------------
+
+Users Table:
+
+id name
+
+Posts Table:
+
+id title user_id
+
+Important line in schema:
+
+.references(() => users.id)
+
+Meaning:
+
+posts.user_id must match users.id
+
+  ------------------------
+  Why .notNull() Matters
+  ------------------------
+
+.notNull()
+
+Means:
+
+Post must have a user
+
+Without it:
+
+Post can exist without user
+
+  -----------------------------
+  4) Drizzle Relations Syntax
+  -----------------------------
+
+Post Side (Many → One):
+
+relations(posts, ({ one }) => ({ user: one(users, { fields:
+[posts.userId], references: [users.id], }), }));
+
+Meaning:
+
+Each post has one user
+
+fields:
+
+This table column stores the foreign key
+
+references:
+
+It points to this column in the other table
+
+User Side (One → Many):
+
+relations(users, ({ many }) => ({ posts: many(posts), }));
+
+Meaning:
+
+One user has many posts
+
+  --------------------
+  5) CRUD in Drizzle
+  --------------------
+
+CRUD means:
+
+Create Read Update Delete
+
+  -----------------
+  CREATE (Insert)
+  -----------------
+
+Insert User:
+
+db.insert(users).values({ name: “Rahul”, });
+
+Insert Post:
+
+db.insert(posts).values({ title: “My first post”, userId: 1, });
+
+Get inserted data:
+
+.returning()
+
+Example:
+
+const user = await db .insert(users) .values({ name: “Rahul” })
+.returning();
+
+  --------------
+  READ (Fetch)
+  --------------
+
+Get all users:
+
+db.select().from(users)
+
+Get one user:
+
+db.select() .from(users) .where(eq(users.id, 1))
+
+Better way:
+
+db.query.users.findFirst({ where: eq(users.id, 1), })
+
+Read with relation:
+
+db.query.users.findMany({ with: { posts: true, }, })
+
+  --------
+  UPDATE
+  --------
+
+Update user:
+
+db.update(users) .set({ name: “Amit”, }) .where(eq(users.id, 1))
+
+Warning:
+
+Never forget .where()
+
+Otherwise you update ALL rows
+
+  --------
+  DELETE
+  --------
+
+Delete post:
+
+db.delete(posts) .where(eq(posts.id, 1))
+
+Delete user:
+
+db.delete(users) .where(eq(users.id, 1))
+
+Possible problem:
+
+Delete may fail due to foreign key constraint
+
+  ----------------
+  Cascade Delete
+  ----------------
+
+.references(() => users.id, { onDelete: “cascade”, })
+
+Meaning:
+
+Delete user → automatically delete posts
+
+  -------------------
+  Quick Cheat Sheet
+  -------------------
+
+Create: db.insert(table).values()
+
+Read: db.select().from(table)
+
+Update: db.update(table).set()
+
+Delete: db.delete(table)
+
+Get relation: db.query.table.findMany({ with: { relation: true } })

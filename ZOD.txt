@@ -1,0 +1,74 @@
+ZOD  (Better to go to docs)
+It is used for data validation 
+Zod is a TypeScript-first validation library. Using Zod, you can define schemas you can use to validate data
+
+eg - 
+
+import * as z from "zod";
+ 
+const User = z.object({
+  name: z.string(),
+});
+ 
+// some untrusted data...
+const input = { /* stuff */ };
+ 
+// the parsed result is validated and type safe!
+const data = User.parse(input);
+ 
+// so you can use it with confidence :)
+console.log(data.name);
+
+
+Install: npm install zod
+
+Requirements:
+--------------
+Zod is tested against TypeScript v5.5 and later and You must enable strict mode in your tsconfig.json
+
+Basic usage:
+------------------------------------------------------------------------------
+Defining a schema:
+---------------------
+
+import * as z from "zod"; 
+ 
+const Player = z.object({ 
+  username: z.string(),
+  xp: z.number()
+});
+
+Parsing data: 
+------------
+
+Player.parse({ username: "billie", xp: 100 }); 
+
+**
+To avoid a try/catch block, you can use the .safeParse() method to get back a plain result object containing either the successfully parsed data or a ZodError
+
+const result = Player.safeParse({ username: 42, xp: "100" });
+if (!result.success) {
+  result.error;   // ZodError instance
+} else {
+  result.data;    // { username: string; xp: number }
+}
+
+Inferring types
+---------------
+
+Zod infers a static type from your schema definitions. You can extract this type with the z.infer<> utility and use it however you like.
+
+
+const Player = z.object({ 
+  username: z.string(),
+  xp: z.number()
+});
+ 
+// extract the inferred type
+type Player = z.infer<typeof Player>;
+ 
+// use it in your code
+const player: Player = { username: "billie", xp: 100 };
+
+
+
